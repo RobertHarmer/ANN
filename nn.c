@@ -201,17 +201,22 @@ void InitNeurones(int nneurones, neurone** neurones)
 void InitNet(net* n, float learningRate, int ninputs, float** inputs, int nneurones, neurone** neurones)
 {
   n->lrate = learningRate;
-  n->nlayers = 1;
   n->iter = 0;
   n->ninputs = ninputs;
   n->inputs = inputs;
   n->nneurones = nneurones;
   n->neurones = neurones;
+  
+  // init layer information
+  n->nlayers = 1;
+  n->ninLayer = 0;
+  n->ninLayerID = 0;
   return;
 }
 
 void AssignLayersinNet(net* brain)
 {
+  // assign a layer to each neurone
   int changed = 1;
   while(changed)
   {
@@ -242,6 +247,44 @@ void AssignLayersinNet(net* brain)
       }
     }
   }
+  
+  /* set up layers */
+  brain->ninLayer = (int*)malloc((brain->nlayers) * sizeof(int));
+  int j;
+  for(j =0; j < brain->nlayers; j++)
+  {
+    brain->ninLayer[j] = 0;
+  }
+  
+  // array to store the top of ninlayers as we push neurones onto it
+  int* top = (int*)malloc(brain->nlayers * sizeof(int));
+  for(j =0; j < brain->nlayers; j++)
+  {
+    top[j] = 0;
+  }
+  
+  // record the number of neurones in each layer
+  for(j =0; j < brain->nneurones; j++)
+  {
+    brain->ninLayer[(*brain->neurones[j]).nlayer-1]++;
+  }
+  
+  // allocate memory to store neurones ids, per layer
+  brain->ninLayerID = (int**)malloc((brain->nlayers) * sizeof(int*));
+  for(j =0; j < brain->nlayers; j++)
+  {
+    brain->ninLayerID[j] = (int*)malloc(brain->ninLayer[j] * sizeof(int));
+  }
+  
+  // iterate over all neurones and add their ids to each layer
+  for(j =0; j < brain->nneurones; j++)
+  {
+    int next = top[(*brain->neurones[j]).nlayer-1];
+    brain->ninLayerID[(*brain->neurones[j]).nlayer-1][next] = j;
+    
+    top[(*brain->neurones[j]).nlayer-1]++;
+  }
+  
   return;
 }
 

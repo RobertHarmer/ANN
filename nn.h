@@ -20,7 +20,6 @@ typedef struct net net;
 struct net
 {
   float lrate;
-  int nlayers;
   int iter;
   int ninputs;
   float** inputs;
@@ -30,6 +29,11 @@ struct net
   int ntargets;
   int* targetNeurones;
   float* targetValues;
+  
+  // layers
+  int nlayers;
+  int* ninLayer;
+  int** ninLayerID;
 };
 
 void InitInputs(int ninputs, float** inputs, float defaultValue);
