@@ -2,14 +2,30 @@
 #define draft1
 
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include <math.h>
 #include "nn.h"
+#include "dllist.h"
 
 int main()
 {
   printf("ANN Modeling Program\n");
 
+  /* test dllist implementation */
+  dllnode* list = (dllnode*)malloc(sizeof(dllnode));
+  list->prev = null;
+  list->next = null;
+  
+  list->n = 1;
+  push(list, 3);
+  push(list, 4);
+  push(list, 6);
+  
+  list = removeAt(list, 0);
+  
+  printdllist(list);
+  
   // initialise 5 inputs
   int ninputs = 5;
   float** inputs;
@@ -27,53 +43,32 @@ int main()
   InitNet(&brain, 1.0f, ninputs, inputs, nneurones, neurones);
   brain.ntargets = 1;
   brain.targetNeurones = (int*)malloc(brain.ntargets * sizeof(int));
-  brain.targetValues = (float*)malloc(brain.ntargets * sizeof(float));
+  brain.targetValues = (float**)malloc(brain.ntargets * sizeof(float*));
 
   // define net output neurones
   (*brain.neurones[5]).nlayer = 1;
 
   // connect neurones within brain together
-  (*brain.neurones[0]).nninputs = 3;
-  (*brain.neurones[0]).ninputs = (int*)malloc((*brain.neurones[0]).nninputs * sizeof(int));
-  (*brain.neurones[0]).ninputs[0] = 0;
-  (*brain.neurones[0]).ninputs[1] = 1;
-  (*brain.neurones[0]).ninputs[2] = 2;
+  AddInputtoNeurone(&brain, 0, 0);
+  AddInputtoNeurone(&brain, 0, 1);
+  AddInputtoNeurone(&brain, 0, 2);
 
-  (*brain.neurones[1]).nninputs = 3;
-  (*brain.neurones[1]).ninputs = (int*)malloc((*brain.neurones[1]).nninputs * sizeof(int));
-  (*brain.neurones[1]).ninputs[0] = 1;
-  (*brain.neurones[1]).ninputs[1] = 2;
-  (*brain.neurones[1]).ninputs[2] = 3;
+  AddInputtoNeurone(&brain, 1, 1);
+  AddInputtoNeurone(&brain, 1, 2);
+  AddInputtoNeurone(&brain, 1, 3);
 
-  (*brain.neurones[2]).nninputs = 3;
-  (*brain.neurones[2]).ninputs = (int*)malloc((*brain.neurones[2]).nninputs * sizeof(int));
-  (*brain.neurones[2]).ninputs[0] = 2;
-  (*brain.neurones[2]).ninputs[1] = 3;
-  (*brain.neurones[2]).ninputs[2] = 4;
+  AddInputtoNeurone(&brain, 2, 2);
+  AddInputtoNeurone(&brain, 2, 3);
+  AddInputtoNeurone(&brain, 2, 4);
 
-  (*brain.neurones[3]).niinputs = 2;
-  (*brain.neurones[3]).iinputs = (int*)malloc((*brain.neurones[3]).niinputs * sizeof(int));
-  (*brain.neurones[3]).iinputs[0] = 0;
-  (*brain.neurones[3]).iinputs[1] = 1;
-  (*brain.neurones[3]).weights = (float*)malloc((*brain.neurones[3]).niinputs * sizeof(float));
-  (*brain.neurones[3]).weights[0] = 0.5f;
-  (*brain.neurones[3]).weights[1] = 0.5f;
+  AddConnection(&brain, 0, 3, 0.5f);
+  AddConnection(&brain, 1, 3, 0.5f);
 
-  (*brain.neurones[4]).niinputs = 2;
-  (*brain.neurones[4]).iinputs = (int*)malloc((*brain.neurones[4]).niinputs * sizeof(int));
-  (*brain.neurones[4]).iinputs[0] = 1;
-  (*brain.neurones[4]).iinputs[1] = 2;
-  (*brain.neurones[4]).weights = (float*)malloc((*brain.neurones[4]).niinputs * sizeof(float));
-  (*brain.neurones[4]).weights[0] = 0.5f;
-  (*brain.neurones[4]).weights[1] = 0.5f;
+  AddConnection(&brain, 1, 4, 0.5f);
+  AddConnection(&brain, 2, 4, 0.5f);
 
-  (*brain.neurones[5]).niinputs = 2;
-  (*brain.neurones[5]).iinputs = (int*)malloc((*brain.neurones[5]).niinputs * sizeof(int));
-  (*brain.neurones[5]).iinputs[0] = 3;
-  (*brain.neurones[5]).iinputs[1] = 4;
-  (*brain.neurones[5]).weights = (float*)malloc((*brain.neurones[5]).niinputs * sizeof(float));
-  (*brain.neurones[5]).weights[0] = 0.5f;
-  (*brain.neurones[5]).weights[1] = 0.5f;
+  AddConnection(&brain, 3, 5, 0.5f);
+  AddConnection(&brain, 4, 5, 0.5f);
 
   // assign neurones to layers
   AssignLayersinNet(&brain);
@@ -96,7 +91,7 @@ int main()
       {
         t += *brain.inputs[(*brain.neurones[j]).ninputs[k]];
       }
-      
+
       // iterate over neurone inputs at this neurone
       for(k =0; k < (*brain.neurones[j]).niinputs; k++)
       {
@@ -108,9 +103,9 @@ int main()
     }
 
     /* train nn with the back propagation algorithm */
-    
+
     float t = 0.75f;
-    
+
     // iterate over neurones in final layer
     for(j =0; j < brain.nneurones; j++)
     {
@@ -119,7 +114,7 @@ int main()
         (*brain.neurones[j]).delta = ((*brain.neurones[j]).output1 - t) * (*brain.neurones[j]).output1 * (1.0f - (*brain.neurones[j]).output1);
       }
     }
-    
+
     // iterate over layers
     int layer;
     for(layer = brain.nlayers-1; layer > 0; layer--)
@@ -144,12 +139,12 @@ int main()
               }
             }
           }
-      
+
           (*brain.neurones[j]).delta = (sigma) * (*brain.neurones[j]).output1 * (1.0f - (*brain.neurones[j]).output1);
         }
       }
     }
-    
+
     // update weights
     for(j =0; j < brain.nneurones; j++)
     {
@@ -160,7 +155,7 @@ int main()
         (*brain.neurones[j]).weights[k] -= update;
       }
     }
-    
+
     // set last iter values as current iter
     for(j =0; j < brain.nneurones; j++)
     {
@@ -195,6 +190,8 @@ void InitNeurones(int nneurones, neurone** neurones)
     (*neurones[i]).nlayer  = -1;
     (*neurones[i]).output0 = 0;
     (*neurones[i]).output1 = 0;
+    (*neurones[i]).iinputssize = 0;
+    (*neurones[i]).ioutputssize = 0;
   }
 }
 
@@ -206,7 +203,7 @@ void InitNet(net* n, float learningRate, int ninputs, float** inputs, int nneuro
   n->inputs = inputs;
   n->nneurones = nneurones;
   n->neurones = neurones;
-  
+
   // init layer information
   n->nlayers = 1;
   n->ninLayer = 0;
@@ -238,7 +235,7 @@ void AssignLayersinNet(net* brain)
           {
             (*brain->neurones[(*brain->neurones[j]).iinputs[k]]).nlayer = (*brain->neurones[j]).nlayer+1;
             changed = 1;
-            
+
             // set number of layers in net
             if(brain->nlayers < (*brain->neurones[j]).nlayer+1)
               brain->nlayers = (*brain->neurones[j]).nlayer+1;
@@ -247,7 +244,7 @@ void AssignLayersinNet(net* brain)
       }
     }
   }
-  
+
   /* set up layers */
   brain->ninLayer = (int*)malloc((brain->nlayers) * sizeof(int));
   int j;
@@ -255,35 +252,122 @@ void AssignLayersinNet(net* brain)
   {
     brain->ninLayer[j] = 0;
   }
-  
+
   // array to store the top of ninlayers as we push neurones onto it
   int* top = (int*)malloc(brain->nlayers * sizeof(int));
   for(j =0; j < brain->nlayers; j++)
   {
     top[j] = 0;
   }
-  
+
   // record the number of neurones in each layer
   for(j =0; j < brain->nneurones; j++)
   {
     brain->ninLayer[(*brain->neurones[j]).nlayer-1]++;
   }
-  
+
   // allocate memory to store neurones ids, per layer
   brain->ninLayerID = (int**)malloc((brain->nlayers) * sizeof(int*));
   for(j =0; j < brain->nlayers; j++)
   {
     brain->ninLayerID[j] = (int*)malloc(brain->ninLayer[j] * sizeof(int));
   }
-  
+
   // iterate over all neurones and add their ids to each layer
   for(j =0; j < brain->nneurones; j++)
   {
     int next = top[(*brain->neurones[j]).nlayer-1];
     brain->ninLayerID[(*brain->neurones[j]).nlayer-1][next] = j;
-    
+
     top[(*brain->neurones[j]).nlayer-1]++;
   }
+
+  return;
+}
+
+void AddConnection(net* brain, int sourceN, int sinkN, float weight)
+{
+  /* add sinkN to sourceN as an output */
+  if(brain->neurones[sourceN]->nioutputs == 0)
+  {
+    brain->neurones[sourceN]->nioutputs = 1;
+    brain->neurones[sourceN]->ioutputssize = 1;
+    brain->neurones[sourceN]->ioutputs = (int*)malloc(sizeof(int));
+  }
+  else if(brain->neurones[sourceN]->nioutputs == brain->neurones[sourceN]->ioutputssize)
+  {
+    int* resizedList = (int*)malloc(brain->neurones[sourceN]->ioutputssize * sizeof(int) * 2);
+    memcpy(resizedList, brain->neurones[sourceN]->ioutputs, (brain->neurones[sourceN]->nioutputs * sizeof(int)));
+    free(brain->neurones[sourceN]->ioutputs);
+    brain->neurones[sourceN]->ioutputs = resizedList;
+
+    brain->neurones[sourceN]->ioutputssize *= 2;
+    brain->neurones[sourceN]->nioutputs++;
+  }
+  else
+  {
+    brain->neurones[sourceN]->nioutputs++;
+  }
+  brain->neurones[sourceN]->ioutputs[brain->neurones[sourceN]->nioutputs-1] = sinkN;
+
+  /* add sourceN to sinkN as an input, with its associated weight */
+  if(brain->neurones[sinkN]->niinputs == 0)
+  {
+    brain->neurones[sinkN]->niinputs++;
+    brain->neurones[sinkN]->iinputssize++;
+    brain->neurones[sinkN]->iinputs = (int*)malloc(sizeof(int));
+    brain->neurones[sinkN]->weights = (float*)malloc(sizeof(float));
+  }
+  else if(brain->neurones[sinkN]->niinputs == brain->neurones[sinkN]->iinputssize)
+  {
+    // double physical size of iinputs
+    int* resizedList = (int*)malloc(brain->neurones[sinkN]->iinputssize * sizeof(int) * 2);
+    memcpy(resizedList, brain->neurones[sinkN]->iinputs, (brain->neurones[sinkN]->niinputs * sizeof(int)));
+    free(brain->neurones[sinkN]->iinputs);
+    brain->neurones[sinkN]->iinputs = resizedList;
+
+    //double physical size of weights
+    float* resizedList2 = (float*)malloc(brain->neurones[sinkN]->iinputssize * sizeof(float) * 2);
+    memcpy(resizedList2, brain->neurones[sinkN]->weights, (brain->neurones[sinkN]->niinputs * sizeof(float)));
+    free(brain->neurones[sinkN]->weights);
+    brain->neurones[sinkN]->weights = resizedList2;
+
+    brain->neurones[sinkN]->iinputssize *= 2;
+    brain->neurones[sinkN]->niinputs++;
+  }
+  else
+  {
+    brain->neurones[sinkN]->niinputs++;
+  }
+  brain->neurones[sinkN]->iinputs[brain->neurones[sinkN]->niinputs-1] = sourceN;
+  brain->neurones[sinkN]->weights[brain->neurones[sinkN]->niinputs-1] = weight;
+
+  return;
+}
+
+void AddInputtoNeurone(net* brain, int neuroneID, int inputIndex)
+{
+  if(brain->neurones[neuroneID]->nninputs == 0)
+  {
+    brain->neurones[neuroneID]->nninputs = 1;
+    brain->neurones[neuroneID]->nninputssize = 1;
+    brain->neurones[neuroneID]->ninputs = (int*)malloc(sizeof(int));
+  }
+  else if(brain->neurones[neuroneID]->nninputs == brain->neurones[neuroneID]->nninputssize)
+  {
+    int* resizedList = (int*)malloc(brain->neurones[neuroneID]->nninputssize * sizeof(int) * 2);
+    memcpy(resizedList, brain->neurones[neuroneID]->ninputs, (brain->neurones[neuroneID]->nninputs * sizeof(int)));
+    free(brain->neurones[neuroneID]->ninputs);
+    brain->neurones[neuroneID]->ninputs = resizedList;
+    
+    brain->neurones[neuroneID]->nninputssize *= 2;
+    brain->neurones[neuroneID]->nninputs++;
+  }
+  else
+  {
+    brain->neurones[neuroneID]->nninputs++;
+  }
+    brain->neurones[neuroneID]->ninputs[brain->neurones[neuroneID]->nninputs-1] = inputIndex;
   
   return;
 }

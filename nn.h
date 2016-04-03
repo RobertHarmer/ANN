@@ -6,11 +6,24 @@ struct neurone
 {
   float delta;
   int id; // id = index
-  int niinputs; // number of inputs neurones
-  int* iinputs; // indices of input neurones
-  float* weights; // weights
+  
+  // Net Inputs at this Neurone
   int nninputs; // number of net inputs
   int* ninputs; //indices of net inputs
+  int nninputssize; // actual size of nninputs
+  
+  
+  // Input Neurones
+  int niinputs; // number of inputs neurones
+  int* iinputs; // indices of input neurones
+  float* weights; // associated weights
+  int iinputssize; // actual size of iinputs
+  
+  // Output Neurones
+  int nioutputs;
+  int* ioutputs;
+  int ioutputssize; // actual size of ionputs
+    
   float output0; // last iter
   float output1; // current iter
   int nlayer;
@@ -28,7 +41,7 @@ struct net
   
   int ntargets;
   int* targetNeurones;
-  float* targetValues;
+  float** targetValues;
   
   // layers
   int nlayers;
@@ -41,6 +54,8 @@ void InitNeurones(int nneurones, neurone** neurones);
 void InitNet(net* n,float learningRate, int ninputs, float** inputs, int nneurones, neurone** neurones);
 void AssignLayersinNet(net* brain);
 float getGlobalError(int noutputs, neurone** outputs, float* targets);
+void AddConnection(net* brain, int sourceN, int sinkN, float weight);
+void AddInputtoNeurone(net* brain, int neuroneID, int inputIndex);
 void updateWeights();
 
 
